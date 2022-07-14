@@ -3,6 +3,8 @@ package enviando_email;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.activation.DataHandler;
@@ -74,7 +76,7 @@ public class ObjetoEnviaEmail {
 		}
 		Transport.send(message);
 	}
-	
+
 	public void enviarEmailAnexo(boolean envioHTML) throws Exception {
 		Properties properties = new Properties();
 		properties.put("mail.smtp.ssl.trust", "*");/* Vai fazer o projeto autenticar com a segurança SSL */
@@ -100,49 +102,63 @@ public class ObjetoEnviaEmail {
 		message.setFrom(new InternetAddress(userName, nomeRemetente));/* Quem está enviando */
 		message.setRecipients(Message.RecipientType.TO, toUser);/* Email de destino */
 		message.setSubject(assuntoEmail);/* Assnto do e-mail */
-		
-		/*parte 1 do email*/
+
+		/* parte 1 do email */
 		MimeBodyPart corpoEmail = new MimeBodyPart();
-		
+
 		if (envioHTML) {
 
 			corpoEmail.setContent(textoEmail, "text/html; charset=utf-8");
 		} else {
 			corpoEmail.setText(textoEmail);/* Texto do email */
 		}
-		
-		MimeBodyPart anexoEmail = new MimeBodyPart();
-		
-		/*Onde é passado o simuladordePDF você passa o seu arquivo gravado no banco e dados*/
-		anexoEmail.setDataHandler(new DataHandler(new ByteArrayDataSource(simuladorPDF(), "application/pdf")));
-		anexoEmail.setFileName("anexoemail.pdf");
-		
+
+		List<FileInputStream> arquivos = new ArrayList<FileInputStream>();
+		arquivos.add(simuladorPDF());
+		arquivos.add(simuladorPDF());
+		arquivos.add(simuladorPDF());
+		arquivos.add(simuladorPDF());
+
 		Multipart multipart = new MimeMultipart();
 		multipart.addBodyPart(corpoEmail);
-		multipart.addBodyPart(anexoEmail);
-		
+
+		int index =0;
+		for (FileInputStream fileInputStream : arquivos) {
+
+			MimeBodyPart anexoEmail = new MimeBodyPart();
+
+			/*
+			 * Onde é passado o simuladordePDF você passa o seu arquivo gravado no banco e
+			 * dados
+			 */
+			anexoEmail.setDataHandler(new DataHandler(new ByteArrayDataSource(simuladorPDF(), "application/pdf")));
+			anexoEmail.setFileName("anexoemail"+index+".pdf");
+
+			multipart.addBodyPart(anexoEmail);
+			
+			index++;
+		}
 		message.setContent(multipart);
-		
+
 		Transport.send(message);
 	}
+
 	/**
-	 *Esse método simula o PDF ou qualquer arquivo que possa  ser enviado por anexo no email
-	 *voce pode pegar o arquivo no seu banco de dados base64,byte[]
-	 *retorna um pdf em branco com o texto paragrafo
+	 * Esse método simula o PDF ou qualquer arquivo que possa ser enviado por anexo
+	 * no email voce pode pegar o arquivo no seu banco de dados base64,byte[]
+	 * retorna um pdf em branco com o texto paragrafo
 	 */
-	private FileInputStream simuladorPDF() throws Exception{
-		
+	private FileInputStream simuladorPDF() throws Exception {
+
 		Document document = new Document();
-		File file = new File ("ileanexo.pdf");
+		File file = new File("ileanexo.pdf");
 		file.createNewFile();
 		PdfWriter.getInstance(document, new FileOutputStream(file));
 		document.open();
 		document.add(new Paragraph("Conteudo do PDF anexo com java Mail"));
 		document.close();
 		return new FileInputStream(file);
-		
+
 	}
-	
-	
-	
+
 }
